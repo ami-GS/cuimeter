@@ -5,12 +5,13 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"sync"
 )
 
 type Hint interface {
 	Parse(data string) (map[string]int64, error)
 	// http get, or read line and so on, user can define the method
-	Get() (int64, error)
+	Get(retData *int64, wg *sync.WaitGroup)
 	GetUnit() string
 }
 

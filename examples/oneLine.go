@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"strconv"
+	"sync"
 
 	"github.com/ami-GS/cuimeter"
 )
@@ -38,15 +39,17 @@ func (s *OneLineHint) Parse(data string) (out map[string]int64, err error) {
 	return out, nil
 }
 
-func (s *OneLineHint) Get() (int64, error) {
+func (s *OneLineHint) Get(retData *int64, wg *sync.WaitGroup) {
+	var tmp int
+	var err error
 	if s.scanner.Scan() {
-		out, err := strconv.Atoi(s.scanner.Text())
+		tmp, err = strconv.Atoi(s.scanner.Text())
 		if err != nil {
-			return 0, err
+			panic(err)
 		}
-		return int64(out), nil
 	}
-	return 0, nil
+	*retData = int64(tmp)
+	wg.Done() // TODO: channel?
 }
 
 func (s *OneLineHint) GetUnit() string {

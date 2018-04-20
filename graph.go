@@ -134,22 +134,12 @@ func (g *Graph) Run(hints []Hint) {
 	wg := &sync.WaitGroup{}
 	count := uint64(0)
 	sleep := 200 * time.Millisecond
-	var err error
-	var curr int64
 	DataBuff := make([]int64, len(hints))
 	for {
 		now := time.Now()
 		for i, v := range hints {
 			wg.Add(1)
-			go func(vv Hint, retData *int64) {
-				curr, err = vv.Get()
-				if err != nil {
-					panic(err)
-				}
-				val := curr
-				*retData = val
-				wg.Done()
-			}(v, &DataBuff[i])
+			go v.Get(&DataBuff[i], wg)
 		}
 		wg.Wait()
 		for i, status := range g.AllStatus {
@@ -159,6 +149,7 @@ func (g *Graph) Run(hints []Hint) {
 					_ = status.Data.Dequeue()
 				}
 				status.Data.Enqueue(data)
+				wg.Done()
 			}(status, DataBuff[i])
 		}
 		wg.Wait()
