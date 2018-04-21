@@ -87,6 +87,7 @@ func (g *Graph) GetGlobalMax() (globalMax int64) {
 }
 
 func (g *Graph) FillBuff() {
+	// TODO: needs optimization
 	globalMax := g.GetGlobalMax()
 
 	height := int(g.Height)
@@ -133,7 +134,7 @@ func (g *Graph) FillBuff() {
 func (g *Graph) Run(hints []Hint) {
 	wg := &sync.WaitGroup{}
 	count := uint64(0)
-	sleep := 200 * time.Millisecond
+	sleep := hints[0].GetInterval()
 	DataBuff := make([]int64, len(hints))
 	for {
 		now := time.Now()
@@ -156,10 +157,13 @@ func (g *Graph) Run(hints []Hint) {
 		g.Visualize()
 		label := ""
 		for _, status := range g.AllStatus {
-			label += fmt.Sprintf("%d %s/%.2fs  ", status.Data.TailData(), hints[0].GetUnit(), float64(sleep)/float64(time.Second))
+			label += fmt.Sprintf("%d %s/%.2fs  ",
+				status.Data.TailData(),
+				hints[0].GetUnit(),
+				float64(sleep)/float64(time.Second))
 		}
 		fmt.Printf("%s\n", label)
 		count++
-		time.Sleep(sleep - time.Now().Sub(now))
+		time.Sleep(time.Duration(sleep) - time.Now().Sub(now))
 	}
 }

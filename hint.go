@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"time"
 )
 
 type Hint interface {
@@ -13,6 +14,7 @@ type Hint interface {
 	// http get, or read line and so on, user can define the method
 	Get(retData *int64, wg *sync.WaitGroup)
 	GetUnit() string
+	GetInterval() time.Duration
 }
 
 // One of example
@@ -21,6 +23,7 @@ type NginxStubHint struct {
 	targetKey    string
 	targetFile   string
 	unit         string
+	interval     time.Duration
 }
 
 func NewNginxStatusHint(targetFile string, targetKey string, dataLocation map[string]int, unit string) *NginxStubHint {
@@ -33,6 +36,7 @@ func NewNginxStatusHint(targetFile string, targetKey string, dataLocation map[st
 		targetFile:   targetFile,
 		targetKey:    targetKey,
 		unit:         unit,
+		interval:     200 * time.Millisecond,
 	}
 }
 
@@ -60,4 +64,8 @@ func (s *NginxStubHint) Get() (int64, error) {
 
 func (s *NginxStubHint) GetUnit() string {
 	return s.unit
+}
+
+func (s *NginxStubHint) GetInterval() time.Duration {
+	return s.interval
 }

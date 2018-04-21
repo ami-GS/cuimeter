@@ -7,6 +7,7 @@ import (
 	"os"
 	"strconv"
 	"sync"
+	"time"
 
 	"github.com/ami-GS/cuimeter"
 )
@@ -16,9 +17,10 @@ type OneLineHint struct {
 	targetFile string
 	scanner    *bufio.Scanner
 	unit       string
+	interval   time.Duration
 }
 
-func NewOneLineHint(targetFile string) *OneLineHint {
+func NewOneLineHint(targetFile string, interval time.Duration) *OneLineHint {
 	fp, err := os.Open(targetFile)
 	// TODO: need fp.Close(), but when?
 	if err != nil {
@@ -30,6 +32,7 @@ func NewOneLineHint(targetFile string) *OneLineHint {
 		targetFile: targetFile,
 		scanner:    scanner,
 		unit:       "num",
+		interval:   interval,
 	}
 }
 
@@ -56,10 +59,14 @@ func (s *OneLineHint) GetUnit() string {
 	return s.unit
 }
 
+func (s *OneLineHint) GetInterval() time.Duration {
+	return s.interval
+}
+
 func ngxbar2(targets []string) {
 	hints := make([]cuimeter.Hint, len(targets))
 	for i, _ := range hints {
-		hints[i] = NewOneLineHint(targets[i])
+		hints[i] = NewOneLineHint(targets[i], 200*time.Millisecond)
 	}
 	graph := cuimeter.NewGraph(len(targets))
 	graph.Run(hints)
