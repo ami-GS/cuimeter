@@ -13,11 +13,10 @@ import (
 )
 
 type OneLineHint struct {
+	*cuimeter.BaseHint
 	Data       int64
 	targetFile string
 	scanner    *bufio.Scanner
-	unit       string
-	interval   time.Duration
 }
 
 func NewOneLineHint(targetFile string, interval time.Duration) *OneLineHint {
@@ -28,11 +27,10 @@ func NewOneLineHint(targetFile string, interval time.Duration) *OneLineHint {
 	}
 	scanner := bufio.NewScanner(fp)
 	return &OneLineHint{
+		BaseHint:   cuimeter.NewBaseHint("num", interval),
 		Data:       0,
 		targetFile: targetFile,
 		scanner:    scanner,
-		unit:       "num",
-		interval:   interval,
 	}
 }
 
@@ -55,14 +53,6 @@ func (s *OneLineHint) Get(retData *int64, wg *sync.WaitGroup) {
 	wg.Done() // TODO: channel?
 }
 
-func (s *OneLineHint) GetUnit() string {
-	return s.unit
-}
-
-func (s *OneLineHint) GetInterval() time.Duration {
-	return s.interval
-}
-
 func ngxbar2(targets []string) {
 	hints := make([]cuimeter.Hint, len(targets))
 	for i, _ := range hints {
@@ -71,8 +61,6 @@ func ngxbar2(targets []string) {
 	graph := cuimeter.NewGraph(len(targets))
 	graph.Run(hints)
 }
-
-var targets items
 
 type items []string
 
@@ -84,6 +72,7 @@ func (i *items) Set(v string) error {
 	return nil
 }
 func main() {
+	var targets items
 	flag.Var(&targets, "target", "")
 	flag.Parse()
 

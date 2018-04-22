@@ -138,13 +138,13 @@ func (g *Graph) Run(hints []Hint) {
 	DataBuff := make([]int64, len(hints))
 	for {
 		now := time.Now()
+		wg.Add(len(hints))
 		for i, v := range hints {
-			wg.Add(1)
 			go v.Get(&DataBuff[i], wg)
 		}
 		wg.Wait()
+		wg.Add(len(hints))
 		for i, status := range g.AllStatus {
-			wg.Add(1)
 			go func(status *Item, data int64) {
 				if status.Data.IsFull() {
 					_ = status.Data.Dequeue()

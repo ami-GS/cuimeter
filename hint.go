@@ -17,8 +17,28 @@ type Hint interface {
 	GetInterval() time.Duration
 }
 
+type BaseHint struct {
+	unit     string
+	interval time.Duration
+}
+
+func NewBaseHint(unit string, interval time.Duration) *BaseHint {
+	return &BaseHint{
+		unit:     unit,
+		interval: interval,
+	}
+}
+
+func (b *BaseHint) GetUnit() string {
+	return b.unit
+}
+func (b *BaseHint) GetInterval() time.Duration {
+	return b.interval
+}
+
 // One of example
 type NginxStubHint struct {
+	*BaseHint
 	dataLocation map[string]int
 	targetKey    string
 	targetFile   string
@@ -32,11 +52,10 @@ func NewNginxStatusHint(targetFile string, targetKey string, dataLocation map[st
 		keys = append(keys, key)
 	}
 	return &NginxStubHint{
+		BaseHint:     NewBaseHint(unit, 200*time.Millisecond),
 		dataLocation: dataLocation,
 		targetFile:   targetFile,
 		targetKey:    targetKey,
-		unit:         unit,
-		interval:     200 * time.Millisecond,
 	}
 }
 
@@ -60,12 +79,4 @@ func (s *NginxStubHint) Get() (int64, error) {
 		panic(err)
 	}
 	return out[s.targetKey], nil
-}
-
-func (s *NginxStubHint) GetUnit() string {
-	return s.unit
-}
-
-func (s *NginxStubHint) GetInterval() time.Duration {
-	return s.interval
 }
