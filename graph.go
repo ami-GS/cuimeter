@@ -11,6 +11,7 @@ import (
 	"time"
 )
 
+// TODO: more flexible
 var colorMap = map[rune]string{
 	0:    "\x1b[38;2;255;82;197;48;2;255;82;197m█\x1b[0m",
 	1:    "\x1b[38;2;128;200;197;48;2;128;200;197m█\x1b[0m",
@@ -93,17 +94,16 @@ func (g *Graph) FillBuff() {
 	height := int(g.Height)
 	width := int(g.Width)
 
+	for h := 0; h < height; h++ {
+		for w := width - 2; w >= 0; w-- {
+			g.Buff[h][w] = ' '
+		}
+	}
+
 	for i, st := range g.AllStatus {
 		data := st.Data.Data
 		qIdx := st.Data.Head
 
-		if i == 0 {
-			for h := 0; h < height; h++ {
-				for w := width - 2; w >= 0; w-- {
-					g.Buff[h][w] = ' '
-				}
-			}
-		}
 		for w := width - 2; w >= 0; w-- {
 			localHeight := int(float64(data[qIdx]) / float64(globalMax) * float64(height))
 
