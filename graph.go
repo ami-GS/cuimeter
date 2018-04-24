@@ -135,25 +135,28 @@ func (g *Graph) Run(hints []Hint) {
 	wg := &sync.WaitGroup{}
 	count := uint64(0)
 	sleep := hints[0].GetInterval()
-	DataBuff := make([]int64, len(hints))
+	chans := make([]chan int64, len(hints))
+	for i := range chans {
+		chans[i] = make(chan int64)
+	}
+	setFunc := func(status *Item, Chan chan int64, wg *sync.WaitGroup) {
+		dat := <-Chan
+		if status.Data.IsFull() {
+			_ = status.Data.Dequeue()
+		}
+		status.Data.Enqueue(dat)
+		wg.Done()
+	}
+
 	for {
 		now := time.Now()
-		wg.Add(len(hints))
+		wg.Add(2)
 		for i, v := range hints {
-			go v.Get(&DataBuff[i], wg)
+			go v.Get(chans[i])
+			go setFunc(g.AllStatus[i], chans[i], wg)
 		}
 		wg.Wait()
-		wg.Add(len(hints))
-		for i, status := range g.AllStatus {
-			go func(status *Item, data int64) {
-				if status.Data.IsFull() {
-					_ = status.Data.Dequeue()
-				}
-				status.Data.Enqueue(data)
-				wg.Done()
-			}(status, DataBuff[i])
-		}
-		wg.Wait()
+
 		g.Visualize()
 		label := ""
 		for _, status := range g.AllStatus {
@@ -164,6 +167,6 @@ func (g *Graph) Run(hints []Hint) {
 		}
 		fmt.Printf("%s\n", label)
 		count++
-		time.Sleep(time.Duration(sleep) - time.Now().Sub(now))
+		time.Sleep(sleep - time.Now().Sub(now))
 	}
 }

@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"os"
 	"strconv"
-	"sync"
 	"time"
 
 	"github.com/ami-GS/cuimeter"
@@ -40,7 +39,7 @@ func (s *OneLineHint) Parse(data string) (out map[string]int64, err error) {
 	return out, nil
 }
 
-func (s *OneLineHint) Get(retData *int64, wg *sync.WaitGroup) {
+func (s *OneLineHint) Get(Chan chan int64) {
 	var tmp int
 	var err error
 	if s.scanner.Scan() {
@@ -49,11 +48,9 @@ func (s *OneLineHint) Get(retData *int64, wg *sync.WaitGroup) {
 			panic(err)
 		}
 	}
-	*retData = int64(tmp)
-	wg.Done() // TODO: channel?
+	Chan <- int64(tmp)
 }
-
-func ngxbar2(targets []string) {
+func oneline(targets []string) {
 	hints := make([]cuimeter.Hint, len(targets))
 	for i, _ := range hints {
 		hints[i] = NewOneLineHint(targets[i], 200*time.Millisecond)
@@ -76,5 +73,5 @@ func main() {
 	flag.Var(&targets, "target", "")
 	flag.Parse()
 
-	ngxbar2(targets)
+	oneline(targets)
 }
