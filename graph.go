@@ -131,6 +131,17 @@ func (g *Graph) FillBuff() {
 	}
 }
 
+func (g *Graph) ShowLabel(unit string, interval time.Duration) {
+	var lineBuffer bytes.Buffer
+	for _, status := range g.AllStatus {
+		lineBuffer.WriteString(fmt.Sprintf("%d %s/%.2fs  ",
+			status.Data.TailData(),
+			unit,
+			float64(interval)/float64(time.Second)))
+	}
+	fmt.Printf("%s\n", lineBuffer.String())
+}
+
 func (g *Graph) Run(hints []Hint) {
 	wg := &sync.WaitGroup{}
 	count := uint64(0)
@@ -158,14 +169,7 @@ func (g *Graph) Run(hints []Hint) {
 		wg.Wait()
 
 		g.Visualize()
-		label := ""
-		for _, status := range g.AllStatus {
-			label += fmt.Sprintf("%d %s/%.2fs  ",
-				status.Data.TailData(),
-				hints[0].GetUnit(),
-				float64(sleep)/float64(time.Second))
-		}
-		fmt.Printf("%s\n", label)
+		g.ShowLabel(hints[0].GetUnit(), sleep)
 		count++
 		time.Sleep(sleep - time.Now().Sub(now))
 	}
