@@ -161,7 +161,7 @@ func (g *Graph) Run(hints []Hint) {
 
 	for {
 		now := time.Now()
-		wg.Add(2)
+		wg.Add(len(hints))
 		for i, v := range hints {
 			go v.Get(chans[i])
 			go setFunc(g.AllStatus[i], chans[i], wg)

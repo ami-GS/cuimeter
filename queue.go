@@ -18,8 +18,8 @@ type Queue struct {
 
 func NewQueue(size int, track TrackDirection) *Queue {
 	TrackQ := (*Queue)(nil)
-	if track != 0 {
-		TrackQ = NewQueue(size, 0)
+	if track != TrackNone {
+		TrackQ = NewQueue(size, TrackNone)
 	}
 	return &Queue{
 		Head:   0,
