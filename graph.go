@@ -3,10 +3,6 @@ package cuimeter
 import (
 	"bytes"
 	"fmt"
-	"os"
-	"os/exec"
-	"strconv"
-	"strings"
 	"sync"
 	"time"
 )
@@ -30,12 +26,7 @@ type Graph struct {
 }
 
 func NewGraph(targets []string) *Graph {
-	cmd := exec.Command("stty", "size")
-	cmd.Stdin = os.Stdin
-	out, err := cmd.Output()
-	outs := strings.Split(string(out[:len(out)-1]), " ")
-	hr, err := strconv.Atoi(outs[0])
-	wr, err := strconv.Atoi(outs[1])
+	wr, hr, err := GetDisplayWH()
 	if err != nil {
 		panic(err)
 	}
