@@ -149,6 +149,15 @@ func (g *Graph) Get(hint Hint, Chan chan int64) {
 	Chan <- data
 }
 
+func (g *Graph) Set(status *Item, Chan chan int64, wg *sync.WaitGroup) {
+	dat := <-Chan
+	if status.Data.IsFull() {
+		_ = status.Data.Dequeue()
+	}
+	status.Data.Enqueue(dat)
+	wg.Done()
+}
+
 func (g *Graph) Run(hints []Hint) {
 	wg := &sync.WaitGroup{}
 	count := uint64(0)
@@ -157,21 +166,13 @@ func (g *Graph) Run(hints []Hint) {
 	for i := range chans {
 		chans[i] = make(chan int64)
 	}
-	setFunc := func(status *Item, Chan chan int64, wg *sync.WaitGroup) {
-		dat := <-Chan
-		if status.Data.IsFull() {
-			_ = status.Data.Dequeue()
-		}
-		status.Data.Enqueue(dat)
-		wg.Done()
-	}
 
 	for {
 		now := time.Now()
 		wg.Add(len(hints))
 		for i, v := range hints {
 			go g.Get(v, chans[i])
-			go setFunc(g.AllStatus[i], chans[i], wg)
+			go g.Set(g.AllStatus[i], chans[i], wg)
 		}
 		wg.Wait()
 
