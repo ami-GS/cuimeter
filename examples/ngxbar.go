@@ -1,8 +1,6 @@
 package main
 
 import (
-	"flag"
-	"fmt"
 	"io/ioutil"
 	"net/http"
 	"strconv"
@@ -70,7 +68,8 @@ func (s *NginxStatusHint) postProcess(dat int64) int64 {
 	return now
 }
 
-func ngxstatus(targets []string) {
+func ngxstatus() {
+	targets := cuimeter.Targets
 	hints := make([]cuimeter.Hint, len(targets))
 	for i, _ := range hints {
 		hints[i] = NewNginxStatusHint(targets[i],
@@ -91,19 +90,6 @@ func ngxstatus(targets []string) {
 	graph.Run(hints)
 }
 
-type items []string
-
-func (i *items) String() string {
-	return fmt.Sprintf("%v", *i)
-}
-func (i *items) Set(v string) error {
-	*i = append(*i, v)
-	return nil
-}
 func main() {
-	var targets items
-	flag.Var(&targets, "target", "")
-	flag.Parse()
-
-	ngxstatus(targets)
+	ngxstatus()
 }

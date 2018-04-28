@@ -2,8 +2,6 @@ package main
 
 import (
 	"bufio"
-	"flag"
-	"fmt"
 	"os"
 	"strconv"
 	"time"
@@ -47,7 +45,9 @@ func (s *OneLineHint) parse(dat string) (int64, error) {
 	return int64(tmp), nil
 }
 
-func oneline(targets []string) {
+//func oneline(targets []string) {
+func oneline() {
+	targets := cuimeter.Targets
 	hints := make([]cuimeter.Hint, len(targets))
 	for i, _ := range hints {
 		hints[i] = NewOneLineHint(targets[i], 200*time.Millisecond)
@@ -56,19 +56,6 @@ func oneline(targets []string) {
 	graph.Run(hints)
 }
 
-type items []string
-
-func (i *items) String() string {
-	return fmt.Sprintf("%v", *i)
-}
-func (i *items) Set(v string) error {
-	*i = append(*i, v)
-	return nil
-}
 func main() {
-	var targets items
-	flag.Var(&targets, "target", "")
-	flag.Parse()
-
-	oneline(targets)
+	oneline()
 }
