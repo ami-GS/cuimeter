@@ -26,10 +26,10 @@ type Graph struct {
 	Height    uint16
 	AllStatus []*Item
 	Buff      [][]rune
-	Target    string // tracking key for queue
+	Targets   []string // tracking key for queue
 }
 
-func NewGraph(numq int) *Graph {
+func NewGraph(targets []string) *Graph {
 	cmd := exec.Command("stty", "size")
 	cmd.Stdin = os.Stdin
 	out, err := cmd.Output()
@@ -48,7 +48,7 @@ func NewGraph(numq int) *Graph {
 		}
 		buff[h][wr-1] = '\n'
 	}
-
+	numq := len(targets)
 	status := make([]*Item, numq)
 	for i := 0; i < numq; i++ {
 		status[i] = NewItem(wr)
@@ -58,6 +58,7 @@ func NewGraph(numq int) *Graph {
 		Height:    uint16(hr),
 		AllStatus: status,
 		Buff:      buff,
+		Targets:   targets,
 	}
 }
 
@@ -142,10 +143,25 @@ func (g *Graph) ShowLabel(unit string, interval time.Duration) {
 	fmt.Printf("%s\n", lineBuffer.String())
 }
 
+func (g *Graph) Get(hint Hint, Chan chan int64) {
+	strData, err := hint.read()
+	if err != nil {
+		// error channel?
+		panic(err)
+	}
+	data, err := hint.parse(strData)
+	if err != nil {
+		// error channel?
+		panic(err)
+	}
+	data = hint.postProcess(data)
+	Chan <- data
+}
+
 func (g *Graph) Run(hints []Hint) {
 	wg := &sync.WaitGroup{}
 	count := uint64(0)
-	sleep := hints[0].GetInterval()
+	sleep := hints[0].getInterval()
 	chans := make([]chan int64, len(hints))
 	for i := range chans {
 		chans[i] = make(chan int64)
@@ -163,13 +179,13 @@ func (g *Graph) Run(hints []Hint) {
 		now := time.Now()
 		wg.Add(len(hints))
 		for i, v := range hints {
-			go v.Get(chans[i])
+			go g.Get(v, chans[i])
 			go setFunc(g.AllStatus[i], chans[i], wg)
 		}
 		wg.Wait()
 
 		g.Visualize()
-		g.ShowLabel(hints[0].GetUnit(), sleep)
+		g.ShowLabel(hints[0].getUnit(), sleep)
 		count++
 		time.Sleep(sleep - time.Now().Sub(now))
 	}

@@ -5,11 +5,11 @@ import (
 )
 
 type Hint interface {
-	Parse(data string) (map[string]int64, error)
-	// http get, or read line and so on, user can define the method
-	Get(Chan chan int64)
-	GetUnit() string
-	GetInterval() time.Duration
+	read() (string, error)
+	parse(string) (int64, error)
+	postProcess(int64) int64
+	getUnit() string
+	getInterval() time.Duration
 }
 
 type BaseHint struct {
@@ -24,9 +24,18 @@ func NewBaseHint(unit string, interval time.Duration) *BaseHint {
 	}
 }
 
-func (b *BaseHint) GetUnit() string {
+func (b *BaseHint) getUnit() string {
 	return b.unit
 }
-func (b *BaseHint) GetInterval() time.Duration {
+func (b *BaseHint) getInterval() time.Duration {
 	return b.interval
+}
+func (b *BaseHint) read() (string, error) {
+	return "", nil
+}
+func (b *BaseHint) parse(string) (int64, error) {
+	return 0, nil
+}
+func (b *BaseHint) postProcess(data int64) int64 {
+	return data
 }
