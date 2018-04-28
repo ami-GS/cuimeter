@@ -19,7 +19,7 @@ Output should be bellow
 
 
 ## Interfaces
-Currently you have to implement interfaces bellows
+Developer have to implement interfaces bellows
 - `func (self *YourHint) read() (string, error)`
   - How to get Data. (e.g. file open, http get and so on)
 - `func (self *YourHint) parse(string) (int64, error)`
@@ -31,6 +31,10 @@ Currently you have to implement interfaces bellows
 - `func (self *YourHint) getInterval() time.Duration`
   - already defined, but you can override
 
+## Flags
+Flags user can set are as bellows
+- --target
+  Indicates which file/url data will be read, at least one target need to be set
 
 ## TODO
 - Flexible number of targets (up to 2 targets as of now)
