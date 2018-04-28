@@ -15,7 +15,7 @@ import (
 type NginxStatusHint struct {
 	*cuimeter.BaseHint
 	dataLocation map[string]int
-	Data         int64
+	prevData     int64
 	targetFile   string
 	targetKey    string
 }
@@ -28,43 +28,48 @@ func NewNginxStatusHint(targetFile string, targetKey string, dataLocation map[st
 	return &NginxStatusHint{
 		BaseHint:     cuimeter.NewBaseHint(unit, 200*time.Millisecond),
 		dataLocation: dataLocation,
-		Data:         0,
+		prevData:     0,
 		targetFile:   targetFile,
 		targetKey:    targetKey,
 	}
 }
 
-func (s *NginxStatusHint) Parse(data string) (out map[string]int64, err error) {
-	sp := strings.Split(data, " ")
-	out = make(map[string]int64)
+func (s *NginxStatusHint) read() (string, error) {
+	resp, err := http.Get(s.targetFile)
+	if err != nil {
+		return "", err
+	}
+	data, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return "", err
+	}
+	return string(data), nil
+}
+
+func (s *NginxStatusHint) parse(dat string) (int64, error) {
+	sp := strings.Split(dat, " ")
+	out := make(map[string]int64)
 	for k, v := range s.dataLocation {
 		dat, err := strconv.Atoi(sp[v])
 		if err != nil {
-			return nil, err
+			return 0, err
 		}
 		out[k] = int64(dat)
 	}
-	return out, nil
+	return out[s.targetKey], nil
 }
 
-func (s *NginxStatusHint) Get(Chan chan int64) {
-	resp, _ := http.Get(s.targetFile)
-	data, _ := ioutil.ReadAll(resp.Body)
-
-	out, err := s.Parse(string(data))
-	if err != nil {
-		panic(err)
-	}
-
+func (s *NginxStatusHint) postProcess(dat int64) int64 {
 	// initialize
-	if s.Data == 0 {
-		s.Data = out[s.targetKey] + 1
+	if s.prevData == 0 {
+		s.prevData = dat + 1
 	}
 	// -1 removes access by this program
-	now := out[s.targetKey] - s.Data - 1
-	s.Data = out[s.targetKey]
-	Chan <- now
+	now := dat - s.prevData - 1
+	s.prevData = dat
+	return now
 }
+
 func ngxstatus(targets []string) {
 	hints := make([]cuimeter.Hint, len(targets))
 	for i, _ := range hints {
@@ -82,7 +87,7 @@ func ngxstatus(targets []string) {
 			"req",
 		)
 	}
-	graph := cuimeter.NewGraph(len(targets))
+	graph := cuimeter.NewGraph(targets)
 	graph.Run(hints)
 }
 

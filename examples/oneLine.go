@@ -13,7 +13,6 @@ import (
 
 type OneLineHint struct {
 	*cuimeter.BaseHint
-	Data       int64
 	targetFile string
 	scanner    *bufio.Scanner
 }
@@ -27,35 +26,33 @@ func NewOneLineHint(targetFile string, interval time.Duration) *OneLineHint {
 	scanner := bufio.NewScanner(fp)
 	return &OneLineHint{
 		BaseHint:   cuimeter.NewBaseHint("num", interval),
-		Data:       0,
 		targetFile: targetFile,
 		scanner:    scanner,
 	}
 }
 
-func (s *OneLineHint) Parse(data string) (out map[string]int64, err error) {
-	dat, err := strconv.Atoi(data)
-	out["data"] = int64(dat)
-	return out, nil
+func (s *OneLineHint) read() (string, error) {
+	if s.scanner.Scan() {
+		tmp := s.scanner.Text()
+		return tmp, nil
+	}
+	return "", nil
 }
 
-func (s *OneLineHint) Get(Chan chan int64) {
-	var tmp int
-	var err error
-	if s.scanner.Scan() {
-		tmp, err = strconv.Atoi(s.scanner.Text())
-		if err != nil {
-			panic(err)
-		}
+func (s *OneLineHint) parse(dat string) (int64, error) {
+	tmp, err := strconv.Atoi(dat)
+	if err != nil {
+		return 0, err
 	}
-	Chan <- int64(tmp)
+	return int64(tmp), nil
 }
+
 func oneline(targets []string) {
 	hints := make([]cuimeter.Hint, len(targets))
 	for i, _ := range hints {
 		hints[i] = NewOneLineHint(targets[i], 200*time.Millisecond)
 	}
-	graph := cuimeter.NewGraph(len(targets))
+	graph := cuimeter.NewGraph(targets)
 	graph.Run(hints)
 }
 
