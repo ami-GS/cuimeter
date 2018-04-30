@@ -34,7 +34,7 @@ Developer have to implement interfaces bellows
 ## Flags
 Flags user can set are as bellows
 - --target
-  Indicates which file/url data will be read, at least one target need to be set
+  - Indicates which file/url data will be read, at least one target need to be set
 
 ## TODO
 - Flexible number of targets (up to 2 targets as of now)
