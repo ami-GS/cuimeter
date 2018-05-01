@@ -10,7 +10,7 @@ import (
 type Graph struct {
 	Width     uint16
 	Height    uint16
-	AllStatus []*Item
+	AllStatus []*Status
 	Buff      [][]rune
 	Targets   []string // tracking key for queue
 }
@@ -30,9 +30,9 @@ func NewGraph(targets []string) *Graph {
 		buff[h][wr-1] = '\n'
 	}
 	numq := len(targets)
-	status := make([]*Item, numq)
+	status := make([]*Status, numq)
 	for i := 0; i < numq; i++ {
-		status[i] = NewItem(wr)
+		status[i] = NewStatus(wr)
 	}
 	return &Graph{
 		Width:     uint16(wr),
@@ -136,15 +136,12 @@ func (g *Graph) Get(hint Hint, Chan chan int64) {
 		panic(err)
 	}
 	data = hint.postProcess(data)
-	Chan <- data
+	hint.getChan() <- data
 }
 
-func (g *Graph) Set(status *Item, Chan chan int64, wg *sync.WaitGroup) {
+func (g *Graph) Set(status *Status, Chan chan int64, wg *sync.WaitGroup) {
 	dat := <-Chan
-	if status.Data.IsFull() {
-		_ = status.Data.Dequeue()
-	}
-	status.Data.Enqueue(dat)
+	status.SetData(dat)
 	wg.Done()
 }
 

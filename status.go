@@ -1,28 +1,18 @@
 package cuimeter
 
-type Status map[string]int64
+type Status struct {
+	Data *Queue
+}
 
-func NewStatus(contents []string) *Status {
-	m := Status{}
-	for _, v := range contents {
-		m[v] = 0
+func NewStatus(size int) *Status {
+	return &Status{
+		Data: NewQueue(size, 1),
 	}
-	return &m
 }
 
-func (s Status) at(key string) int64 {
-	return map[string]int64(s)[key]
-}
-
-func (s *Status) set(key string, val int64) {
-	map[string]int64(*s)[key] = val
-}
-
-func (s Status) Sub(right *Status) *Status {
-	m := map[string]int64{}
-	for k := range map[string]int64(s) {
-		m[k] = s.at(k) - right.at(k)
+func (s *Status) SetData(data int64) {
+	if s.Data.IsFull() {
+		_ = s.Data.Dequeue()
 	}
-	st := Status(m)
-	return &st
+	s.Data.Enqueue(data)
 }
