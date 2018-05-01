@@ -7,16 +7,6 @@ import (
 	"time"
 )
 
-// TODO: more flexible
-var colorMap = map[rune]string{
-	0:    "\x1b[38;2;255;82;197;48;2;255;82;197m█\x1b[0m",
-	1:    "\x1b[38;2;128;200;197;48;2;128;200;197m█\x1b[0m",
-	2:    "\x1b[38;2;128;200;197;48;2;255;82;197m▒\x1b[0m",
-	3:    "\x1b[38;2;255;82;197;48;2;128;200;197m▒\x1b[0m",
-	' ':  " ",
-	'\n': "\n",
-}
-
 type Graph struct {
 	Width     uint16
 	Height    uint16
@@ -60,7 +50,7 @@ func (g *Graph) Visualize() error {
 	lineBuffer.WriteString(fmt.Sprintf("\x1b[%d;0H", g.Height-3))
 	for h := int(g.Height) - 1; h >= 0; h-- {
 		for w := 0; w < int(g.Width); w++ {
-			lineBuffer.WriteString(fmt.Sprintf(colorMap[g.Buff[h][w]]))
+			lineBuffer.WriteString(fmt.Sprintf(ColorMap[g.Buff[h][w]]))
 		}
 	}
 	fmt.Println(lineBuffer.String())
