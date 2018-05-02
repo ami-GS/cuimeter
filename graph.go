@@ -124,7 +124,7 @@ func (g *Graph) ShowLabel(unit string, interval time.Duration) {
 	fmt.Printf("%s\n", lineBuffer.String())
 }
 
-func (g *Graph) Get(hint Hint, Chan chan int64) {
+func (g *Graph) Get(hint Hint) {
 	strData, err := hint.read()
 	if err != nil {
 		// error channel?
@@ -149,17 +149,12 @@ func (g *Graph) Run(hints []Hint) {
 	wg := &sync.WaitGroup{}
 	count := uint64(0)
 	sleep := hints[0].getInterval()
-	chans := make([]chan int64, len(hints))
-	for i := range chans {
-		chans[i] = make(chan int64)
-	}
-
 	for {
 		now := time.Now()
 		wg.Add(len(hints))
 		for i, v := range hints {
-			go g.Get(v, chans[i])
-			go g.Set(g.AllStatus[i], chans[i], wg)
+			go g.Get(v)
+			go g.Set(g.AllStatus[i], v.getChan(), wg)
 		}
 		wg.Wait()
 
