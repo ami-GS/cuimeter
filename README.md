@@ -6,6 +6,9 @@ cuimeter enables visualization like [speedometer](http://excess.org/speedometer/
 
 Please refere [examples](https://github.com/ami-GS/cuimeter/tree/master/examples) for easy understandings.
 
+## Requirements
+- go 1.10+
+
 ## Example
 
 ```sh
