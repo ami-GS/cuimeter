@@ -6,24 +6,25 @@ import (
 
 type Hint interface {
 	read() (string, error)
-	parse(string) (int64, error)
-	postProcess(int64) int64
+	parse(string) (interface{}, error)
+	postProcess(interface{}) interface{}
 	getUnit() string
 	getInterval() time.Duration
-	getChan() chan int64
+	// currently allows int64 or []int64
+	getChan() chan interface{}
 }
 
 type BaseHint struct {
 	unit     string
 	interval time.Duration
-	Chan     chan int64
+	Chan     chan interface{}
 }
 
 func NewBaseHint(unit string, interval time.Duration) *BaseHint {
 	return &BaseHint{
 		unit:     unit,
 		interval: interval,
-		Chan:     make(chan int64),
+		Chan:     make(chan interface{}),
 	}
 }
 
@@ -33,15 +34,17 @@ func (b *BaseHint) getUnit() string {
 func (b *BaseHint) getInterval() time.Duration {
 	return b.interval
 }
-func (b *BaseHint) getChan() chan int64 {
+func (b *BaseHint) getChan() chan interface{} {
 	return b.Chan
 }
+
 func (b *BaseHint) read() (string, error) {
 	return "", nil
 }
-func (b *BaseHint) parse(string) (int64, error) {
+
+func (b *BaseHint) parse(string) (interface{}, error) {
 	return 0, nil
 }
-func (b *BaseHint) postProcess(data int64) int64 {
+func (b *BaseHint) postProcess(data interface{}) interface{} {
 	return data
 }

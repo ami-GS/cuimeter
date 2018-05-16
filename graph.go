@@ -140,9 +140,14 @@ func (g *Graph) Get(hint Hint) {
 	hint.getChan() <- data
 }
 
-func (g *Graph) Set(status *Status, Chan chan int64, wg *sync.WaitGroup) {
-	dat := <-Chan
-	status.SetData(dat)
+func (g *Graph) Set(status *Status, Chan chan interface{}, wg *sync.WaitGroup) {
+	p := <-Chan
+	switch dat := p.(type) {
+	case int64:
+		status.SetData(dat)
+	default:
+		fmt.Printf("the %v type is not supported yet\n", reflect.TypeOf(dat))
+	}
 	wg.Done()
 }
 
@@ -161,6 +166,10 @@ func (g *Graph) SetForPipe(status []*Status, Chan chan interface{}) {
 }
 
 func (g *Graph) Run(hints []Hint) {
+	g.runWithInterval(hints)
+}
+
+func (g *Graph) runWithInterval(hints []Hint) {
 	wg := &sync.WaitGroup{}
 	count := uint64(0)
 	sleep := hints[0].getInterval()
