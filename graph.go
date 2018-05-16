@@ -3,6 +3,7 @@ package cuimeter
 import (
 	"bytes"
 	"fmt"
+	"reflect"
 	"sync"
 	"time"
 )
@@ -145,6 +146,20 @@ func (g *Graph) Set(status *Status, Chan chan int64, wg *sync.WaitGroup) {
 	wg.Done()
 }
 
+func (g *Graph) SetForPipe(status []*Status, Chan chan interface{}) {
+	p := <-Chan
+	switch dat := p.(type) {
+	case int64:
+		status[0].SetData(dat)
+	case []int64:
+		for i, st := range status {
+			st.SetData(dat[i])
+		}
+	default:
+		fmt.Printf("the %v type is not supported yet\n", reflect.TypeOf(dat))
+	}
+}
+
 func (g *Graph) Run(hints []Hint) {
 	wg := &sync.WaitGroup{}
 	count := uint64(0)
@@ -162,5 +177,20 @@ func (g *Graph) Run(hints []Hint) {
 		g.ShowLabel(hints[0].getUnit(), sleep)
 		count++
 		time.Sleep(sleep - time.Now().Sub(now))
+	}
+}
+
+func (g *Graph) RunWithPipe(hint Hint) {
+	count := uint64(0)
+	before := time.Now()
+	for {
+		go g.Get(hint)
+		g.SetForPipe(g.AllStatus, hint.getChan())
+
+		g.Visualize()
+		after := time.Now()
+		g.ShowLabel(hint.getUnit(), after.Sub(before))
+		count++
+		before = after
 	}
 }
