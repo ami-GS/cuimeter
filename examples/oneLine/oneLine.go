@@ -37,7 +37,7 @@ func (s *OneLineHint) read() (string, error) {
 	return "", nil
 }
 
-func (s *OneLineHint) parse(dat string) (int64, error) {
+func (s *OneLineHint) parse(dat string) (interface{}, error) {
 	tmp, err := strconv.Atoi(dat)
 	if err != nil {
 		return 0, err

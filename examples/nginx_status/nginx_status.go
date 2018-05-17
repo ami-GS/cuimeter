@@ -44,7 +44,7 @@ func (s *NginxStatusHint) read() (string, error) {
 	return string(data), nil
 }
 
-func (s *NginxStatusHint) parse(dat string) (int64, error) {
+func (s *NginxStatusHint) parse(dat string) (interface{}, error) {
 	sp := strings.Split(dat, " ")
 	out := make(map[string]int64)
 	for k, v := range s.dataLocation {
@@ -57,14 +57,18 @@ func (s *NginxStatusHint) parse(dat string) (int64, error) {
 	return out[s.targetKey], nil
 }
 
-func (s *NginxStatusHint) postProcess(dat int64) int64 {
+func (s *NginxStatusHint) postProcess(dat interface{}) interface{} {
+	data, ok := dat.(int64)
+	if !ok {
+		return 0
+	}
 	// initialize
 	if s.prevData == 0 {
-		s.prevData = dat + 1
+		s.prevData = data + 1
 	}
 	// -1 removes access by this program
-	now := dat - s.prevData - 1
-	s.prevData = dat
+	now := data - s.prevData - 1
+	s.prevData = data
 	return now
 }
 

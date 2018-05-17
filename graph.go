@@ -55,19 +55,55 @@ func (g *Graph) Visualize() error {
 		}
 	}
 	fmt.Println(lineBuffer.String())
-
 	return nil
 }
 
-func (g *Graph) GetGlobalMax() (globalMax int64) {
+func (g *Graph) GetGlobalMax() interface{} {
 	// TODO: need to Max/Min
-	for _, st := range g.AllStatus {
-		max := st.Data.TrackQ.HeadData()
-		if max > globalMax {
-			globalMax = max
+	dat := g.AllStatus[0].Data.TrackQ.HeadData()
+	switch data := dat.(type) {
+	case int64:
+		globalMax := data
+		for i := 1; i < len(g.AllStatus); i++ {
+			dat := g.AllStatus[i].Data.TrackQ.HeadData()
+			if dat.(int64) > globalMax {
+				globalMax = dat.(int64)
+			}
 		}
+		return globalMax
+	case float64:
+		globalMax := data
+		for i := 1; i < len(g.AllStatus); i++ {
+			dat := g.AllStatus[i].Data.TrackQ.HeadData()
+			if dat.(float64) > globalMax {
+				globalMax = dat.(float64)
+			}
+		}
+		return globalMax
+	default:
+		fmt.Println("not supported")
 	}
-	return globalMax
+	panic("")
+}
+
+func (g *Graph) ScaledHeight(dat, globalMax interface{}, height int) int {
+	switch data := dat.(type) {
+	case int64:
+		assertMax, ok := globalMax.(int64)
+		if !ok {
+			fmt.Println("type doesn't match")
+		}
+		return int(float64(data) / float64(assertMax) * float64(height))
+	case float64:
+		assertMax, ok := globalMax.(float64)
+		if !ok {
+			fmt.Println("type doesn't match")
+		}
+		return int(data / assertMax * float64(height))
+	default:
+		fmt.Printf("data type [%v] is not supported", reflect.TypeOf(data))
+	}
+	panic("")
 }
 
 func (g *Graph) FillBuff() {
@@ -84,11 +120,10 @@ func (g *Graph) FillBuff() {
 	}
 
 	for i, st := range g.AllStatus {
-		data := st.Data.Data
-		qIdx := st.Data.Head
-
-		for w := width - 2; w >= 0; w-- {
-			localHeight := int(float64(data[qIdx]) / float64(globalMax) * float64(height))
+		st.SeekToHead()
+		for w := width - 2; st.Data.Tail != (st.getIdx+1)%len(st.Data.Data); w-- {
+			dat := st.GetData()
+			localHeight := g.ScaledHeight(dat, globalMax, height)
 
 			for h := 0; h < height; h++ {
 				if h < localHeight {
@@ -101,14 +136,6 @@ func (g *Graph) FillBuff() {
 				} /* else if h > int(globalMax) {
 					g.Buff[h][w] = ' '
 				}*/
-			}
-
-			if qIdx == len(data)-1 {
-				qIdx = 0
-			} else if (qIdx+1)%len(data) == st.Data.Tail {
-				break
-			} else {
-				qIdx++
 			}
 		}
 	}
@@ -151,13 +178,17 @@ func (g *Graph) Set(status *Status, Chan chan interface{}, wg *sync.WaitGroup) {
 	wg.Done()
 }
 
-func (g *Graph) SetForPipe(status []*Status, Chan chan interface{}) {
+func (g *Graph) SetForPipe(Chan chan interface{}) {
 	p := <-Chan
 	switch dat := p.(type) {
-	case int64:
-		status[0].SetData(dat)
+	case int64, float64:
+		g.AllStatus[0].SetData(dat)
 	case []int64:
-		for i, st := range status {
+		for i, st := range g.AllStatus {
+			st.SetData(dat[i])
+		}
+	case []float64:
+		for i, st := range g.AllStatus {
 			st.SetData(dat[i])
 		}
 	default:
@@ -194,7 +225,7 @@ func (g *Graph) RunWithPipe(hint Hint) {
 	before := time.Now()
 	for {
 		go g.Get(hint)
-		g.SetForPipe(g.AllStatus, hint.getChan())
+		g.SetForPipe(hint.getChan())
 
 		g.Visualize()
 		after := time.Now()

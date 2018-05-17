@@ -1,5 +1,7 @@
 package cuimeter
 
+import "fmt"
+
 type TrackDirection byte
 
 const (
@@ -11,7 +13,7 @@ const (
 type Queue struct {
 	Head   int
 	Tail   int
-	Data   []int64
+	Data   []interface{}
 	TrackQ *Queue
 	track  TrackDirection // 0 none, 1 max, 2 min
 }
@@ -24,7 +26,7 @@ func NewQueue(size int, track TrackDirection) *Queue {
 	return &Queue{
 		Head:   0,
 		Tail:   0,
-		Data:   make([]int64, size),
+		Data:   make([]interface{}, size),
 		TrackQ: TrackQ,
 		track:  track,
 	}
@@ -46,7 +48,7 @@ func (q *Queue) IsEmpty() bool {
 	return q.Tail == q.Head
 }
 
-func (q *Queue) Enqueue(s int64) int {
+func (q *Queue) Enqueue(s interface{}) int {
 	if q.IsFull() {
 		return -1
 	}
@@ -57,15 +59,27 @@ func (q *Queue) Enqueue(s int64) int {
 	}
 
 	if q.track != TrackNone {
+		adjustTail := func() {
+			q.TrackQ.Tail--
+			if q.TrackQ.Tail == -1 {
+				q.TrackQ.Tail = q.TrackQ.Len() - 1
+			}
+		}
+
 		tLen := q.TrackQ.Len()
 		for i := 0; i < tLen; i++ {
-			val := q.TrackQ.TailData()
-			if (q.track == TrackMax && val < s) ||
-				(q.track == TrackMin && val > s) {
-				q.TrackQ.Tail--
-				if q.TrackQ.Tail == -1 {
-					q.TrackQ.Tail = q.TrackQ.Len() - 1
+			tailVal := q.TrackQ.TailData()
+			switch dat := s.(type) {
+			case int64:
+				if (q.track == TrackMax && tailVal.(int64) < dat) || (q.track == TrackMin && tailVal.(int64) > dat) {
+					adjustTail()
 				}
+			case float64:
+				if (q.track == TrackMax && tailVal.(float64) < dat) || (q.track == TrackMin && tailVal.(float64) > dat) {
+					adjustTail()
+				}
+			default:
+				fmt.Println("the type is not supported yet")
 			}
 		}
 		q.TrackQ.Enqueue(s)
@@ -74,18 +88,18 @@ func (q *Queue) Enqueue(s int64) int {
 	return 1
 }
 
-func (q *Queue) TailData() int64 {
+func (q *Queue) TailData() interface{} {
 	if q.Tail != 0 {
 		return q.Data[q.Tail-1]
 	}
 	return q.Data[len(q.Data)-1]
 }
 
-func (q *Queue) HeadData() int64 {
+func (q *Queue) HeadData() interface{} {
 	return q.Data[q.Head]
 }
 
-func (q *Queue) Dequeue() int64 {
+func (q *Queue) Dequeue() interface{} {
 	if q.IsEmpty() {
 		return -1
 	}

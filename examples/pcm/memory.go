@@ -122,7 +122,7 @@ func (s *PCMMemoryHint) parse(dat string) (interface{}, error) {
 			i += 3
 		}
 	}
-	return []int64{int64(s.SystemData.Sockets[0].Channels[2].Reads * 100), int64(s.SystemData.Sockets[1].Channels[2].Reads * 100)}, nil
+	return []float64{s.SystemData.Sockets[0].Channels[2].Reads, s.SystemData.Sockets[1].Channels[2].Reads}, nil
 }
 
 func memorystatus() {
