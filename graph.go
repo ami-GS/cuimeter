@@ -143,8 +143,9 @@ func (g *Graph) FillBuff() {
 
 func (g *Graph) ShowLabel(unit string, interval time.Duration) {
 	var lineBuffer bytes.Buffer
-	for _, status := range g.AllStatus {
-		lineBuffer.WriteString(fmt.Sprintf("%d %s/%.2fs  ",
+	for i, status := range g.AllStatus {
+		lineBuffer.WriteString(fmt.Sprintf("%s [%v %s/%.2fs]  ",
+			g.Targets[i],
 			status.Data.TailData(),
 			unit,
 			float64(interval)/float64(time.Second)))
