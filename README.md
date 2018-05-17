@@ -22,13 +22,13 @@ Output should be bellow
 
 
 ## Interfaces
-Developer have to implement interfaces bellows
+Developer have to implement part of interfaces bellow
 - `func (self *YourHint) read() (string, error)`
   - How to get Data. (e.g. file open, http get and so on)
-- `func (self *YourHint) parse(string) (int64, error)`
+- `func (self *YourHint) parse(string) (interface{}, error)`
   - parse data following your telemetry format
-- `func (self *YourHint) postProcess(int64) int64`
-  - called after `parse` to process data, then data is ingested to graph
+- `func (self *YourHint) postProcess(interface{}) interface{}`
+  - called after `parse` to process data (if needed), then data is ingested to graph
 - `func (self *YourHint) getUnit() string`
   - already defined, but you can override
 - `func (self *YourHint) getInterval() time.Duration`
@@ -37,10 +37,12 @@ Developer have to implement interfaces bellows
 ## Flags
 Flags user can set are as bellows
 - --target
-  - Indicates which file/url data will be read, at least one target need to be set
+  - Indicates which file/url data will be read, at least one target need to be set (can be ignore when to use pipe input)
 
 ## TODO
+- read() to be hided from user? The reader could be automatically detected
 - Flexible number of targets (up to 2 targets as of now)
-- Add command line argument template
+- Add command line argument
   - interval, label and so on.
-- Track Min as well (currently only max)
+- Show axis same as [speedometer](http://excess.org/speedometer/)
+- Optimize FillBuff() method (idea is to use lingBuffer which has 1d slice)
