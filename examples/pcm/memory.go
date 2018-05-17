@@ -42,23 +42,35 @@ func NewPCMMemoryHint(unit string) *PCMMemoryHint {
 
 var firstRead = true
 
+func (s *PCMMemoryHint) lateInit(data *string) {
+	numSocket := strings.Count(*data, "Socket")
+	numChannel := strings.Count(*data, "Ch") / numSocket
+	s.SystemData.Sockets = make([]Socket, numSocket)
+	for i := 0; i < numSocket; i++ {
+		s.SystemData.Sockets[i].Channels = make([]Channel, numChannel)
+	}
+}
+
+// This should be changed based on platform configuration
+// or automatically configured at firstRead?
+const onePipeMessageSize = 1974
+
 func (s *PCMMemoryHint) read() (string, error) {
 	reader := bufio.NewReader(os.Stdin)
 	// read 2KB at a time
-	buff := make([]byte, 2096)
-	length, err := reader.Read(buff)
-	if err != nil {
-		return "", err
-	}
-	str := string(buff[:length])
-
-	if firstRead {
-		numSocket := strings.Count(str, "Socket")
-		numChannel := strings.Count(str, "Ch") / numSocket
-		s.SystemData.Sockets = make([]Socket, numSocket)
-		for i := 0; i < numSocket; i++ {
-			s.SystemData.Sockets[i].Channels = make([]Channel, numChannel)
+	buff := make([]byte, onePipeMessageSize)
+	allLen := 0
+	for allLen < onePipeMessageSize {
+		length, err := reader.Read(buff[allLen:])
+		if err != nil {
+			return "", err
 		}
+		allLen += length
+	}
+
+	str := string(buff[:allLen])
+	if firstRead {
+		s.lateInit(&str)
 		firstRead = false
 	}
 
@@ -126,7 +138,7 @@ func (s *PCMMemoryHint) parse(dat string) (interface{}, error) {
 }
 
 func memorystatus() {
-	hint := NewPCMMemoryHint("MB/s")
+	hint := NewPCMMemoryHint("MB")
 	graph := cuimeter.NewGraph([]string{"Socket0_Ch1_Read", "Socket1_Ch1_Read"})
 	graph.RunWithPipe(hint)
 }
