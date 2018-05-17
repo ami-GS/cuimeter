@@ -113,6 +113,7 @@ func (g *Graph) FillBuff() {
 	height := int(g.Height)
 	width := int(g.Width)
 
+	// TODO: will be removed for optimization
 	for h := 0; h < height; h++ {
 		for w := width - 2; w >= 0; w-- {
 			g.Buff[h][w] = ' '
@@ -125,17 +126,13 @@ func (g *Graph) FillBuff() {
 			dat := st.GetData()
 			localHeight := g.ScaledHeight(dat, globalMax, height)
 
-			for h := 0; h < height; h++ {
-				if h < localHeight {
-					if g.Buff[h][w] < rune(i) {
-						// for the part of overrapping
-						g.Buff[h][w] = rune(len(g.AllStatus) + i)
-					} else {
-						g.Buff[h][w] = rune(i)
-					}
-				} /* else if h > int(globalMax) {
-					g.Buff[h][w] = ' '
-				}*/
+			for h := 0; h <= localHeight; h++ {
+				if g.Buff[h][w] < rune(i) {
+					// for the part of overrapping
+					g.Buff[h][w] = rune(len(g.AllStatus) + i)
+				} else {
+					g.Buff[h][w] = rune(i)
+				}
 			}
 		}
 	}
