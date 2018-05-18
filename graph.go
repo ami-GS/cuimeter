@@ -122,17 +122,18 @@ func (g *Graph) FillBuff() {
 	}
 
 	for i, st := range g.AllStatus {
+		colorID := rune(i + 1) // colorMap starts from rune(1)
 		st.SeekToHead()
 		for w := width - 2; st.Data.Tail != (st.getIdx+1)%len(st.Data.Data); w-- {
 			dat := st.GetData()
 			localHeight := g.ScaledHeight(dat, globalMax, height)
 
 			for h := 0; h <= localHeight; h++ {
-				if g.Buff[h][w] < rune(i) {
+				if g.Buff[h][w] < colorID {
 					// for the part of overrapping
-					g.Buff[h][w] = rune(len(g.AllStatus) + i)
+					g.Buff[h][w] = rune(len(g.AllStatus)) + colorID
 				} else {
-					g.Buff[h][w] = rune(i)
+					g.Buff[h][w] = colorID
 				}
 			}
 		}
