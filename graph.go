@@ -167,12 +167,7 @@ func (g *Graph) Get(hint Hint) {
 
 func (g *Graph) Set(status *Status, Chan chan interface{}, wg *sync.WaitGroup) {
 	p := <-Chan
-	switch dat := p.(type) {
-	case int64:
-		status.SetData(dat)
-	default:
-		fmt.Printf("the %v type is not supported yet\n", reflect.TypeOf(dat))
-	}
+	status.SetData(p)
 	wg.Done()
 }
 
