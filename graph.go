@@ -46,6 +46,7 @@ func NewGraph(targets []string) *Graph {
 
 func (g *Graph) Visualize() error {
 	g.FillBuff()
+	g.FillAxis()
 	var lineBuffer bytes.Buffer
 
 	lineBuffer.WriteString(fmt.Sprintf("\x1b[%d;0H", g.Height-3))
@@ -136,6 +137,25 @@ func (g *Graph) FillBuff() {
 			}
 		}
 	}
+}
+
+func (g *Graph) FillAxis() error {
+	fill := func(h int) {
+		for w := 0; w < int(g.Width)-1; w++ {
+			if g.Buff[h][w] == ' ' {
+				g.Buff[h][w] = '─'
+			} else {
+				g.Buff[h][w] += '─'
+			}
+		}
+	}
+	// TODO: put label
+
+	for h := int(g.Height - 1); h > 0; h -= int(g.Height) / 4 {
+		fill(h)
+	}
+	fill(0)
+	return nil
 }
 
 func (g *Graph) ShowLabel(unit string, interval time.Duration) {
