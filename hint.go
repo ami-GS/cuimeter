@@ -1,38 +1,29 @@
 package cuimeter
 
-import (
-	"time"
-)
-
 type Hint interface {
 	read() (string, error)
 	parse(string) (interface{}, error)
 	postProcess(interface{}) interface{}
-	getUnit() string
-	getInterval() time.Duration
-	// currently allows int64 or []int64
+	getTarget() interface{}
 	getChan() chan interface{}
 }
 
 type BaseHint struct {
-	unit     string
-	interval time.Duration
-	Chan     chan interface{}
+	target interface{} // to use string and []string
+	Chan   chan interface{}
 }
 
-func NewBaseHint(unit string, interval time.Duration) *BaseHint {
+func NewBaseHint(target interface{}) *BaseHint {
 	return &BaseHint{
-		unit:     unit,
-		interval: interval,
-		Chan:     make(chan interface{}),
+		target: target,
+		Chan:   make(chan interface{}),
 	}
 }
 
-func (b *BaseHint) getUnit() string {
-	return b.unit
-}
-func (b *BaseHint) getInterval() time.Duration {
-	return b.interval
+var targetIdx int
+
+func (b *BaseHint) getTarget() interface{} {
+	return b.target
 }
 func (b *BaseHint) getChan() chan interface{} {
 	return b.Chan

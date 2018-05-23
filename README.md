@@ -29,10 +29,6 @@ Developer have to implement part of interfaces bellow
   - parse data following your telemetry format
 - `func (self *YourHint) postProcess(interface{}) interface{}`
   - called after `parse` to process data (if needed), then data is ingested to graph
-- `func (self *YourHint) getUnit() string`
-  - already defined, but you can override
-- `func (self *YourHint) getInterval() time.Duration`
-  - already defined, but you can override
 
 ## Flags
 Flags user can set are as bellows

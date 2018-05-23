@@ -14,9 +14,22 @@ type Graph struct {
 	AllStatus []*Status
 	Buff      [][]rune
 	Targets   []string // tracking key for queue
+	Hints     []Hint
+	Unit      string
+	Interval  time.Duration
+
+	// log y axis
+	IsLog bool
+	// used for no scaling
+	IsFixed bool
+	// used for fixed graph
+	Max interface{}
+	Min interface{}
+	// used for number of axis
+	NumSeparate int
 }
 
-func NewGraph(targets []string) *Graph {
+func NewGraph(hints []Hint, unit string, interval time.Duration) *Graph {
 	wr, hr, err := GetDisplayWH()
 	if err != nil {
 		panic(err)
@@ -30,18 +43,44 @@ func NewGraph(targets []string) *Graph {
 		}
 		buff[h][wr-1] = '\n'
 	}
-	numq := len(targets)
-	status := make([]*Status, numq)
-	for i := 0; i < numq; i++ {
+
+	var targets []string
+	targetInterface := hints[0].getTarget()
+	switch target := targetInterface.(type) {
+	case string:
+		targets = append(targets, target)
+		for i := 1; i < len(hints); i++ {
+			ti := hints[i].getTarget()
+			targets = append(targets, ti.(string))
+		}
+	case []string:
+		for _, t := range target {
+			targets = append(targets, t)
+		}
+	default:
+		panic("target should be string or []string")
+	}
+
+	status := make([]*Status, len(targets))
+	for i := 0; i < len(targets); i++ {
 		status[i] = NewStatus(wr)
 	}
 	return &Graph{
-		Width:     uint16(wr),
-		Height:    uint16(hr),
-		AllStatus: status,
-		Buff:      buff,
-		Targets:   targets,
+		Width:       uint16(wr),
+		Height:      uint16(hr),
+		AllStatus:   status,
+		Targets:     targets,
+		Buff:        buff,
+		Hints:       hints,
+		Unit:        unit,
+		Interval:    interval,
+		NumSeparate: 4, // default
 	}
+}
+
+func (g *Graph) SetMinMax(min, max interface{}) {
+	g.Min = min
+	g.Max = max
 }
 
 func (g *Graph) Visualize() error {
@@ -52,7 +91,7 @@ func (g *Graph) Visualize() error {
 	lineBuffer.WriteString(fmt.Sprintf("\x1b[%d;0H", g.Height-3))
 	for h := int(g.Height) - 1; h >= 0; h-- {
 		for w := 0; w < int(g.Width); w++ {
-			lineBuffer.WriteString(fmt.Sprintf(ColorMap[g.Buff[h][w]]))
+			lineBuffer.WriteString(fmt.Sprintf(GetFillChar(g.Buff[h][w])))
 		}
 	}
 	fmt.Println(lineBuffer.String())
@@ -82,7 +121,7 @@ func (g *Graph) GetGlobalMax() interface{} {
 		}
 		return globalMax
 	default:
-		fmt.Println("not supported")
+		fmt.Printf("data type [%v] is not supported", reflect.TypeOf(data))
 	}
 	panic("")
 }
@@ -109,7 +148,12 @@ func (g *Graph) ScaledHeight(dat, globalMax interface{}, height int) int {
 
 func (g *Graph) FillBuff() {
 	// TODO: needs optimization
-	globalMax := g.GetGlobalMax()
+	var globalMax interface{}
+	if g.IsFixed {
+		globalMax = g.Max
+	} else {
+		globalMax = g.GetGlobalMax()
+	}
 
 	height := int(g.Height)
 	width := int(g.Width)
@@ -128,7 +172,7 @@ func (g *Graph) FillBuff() {
 			dat := st.GetData()
 			localHeight := g.ScaledHeight(dat, globalMax, height)
 
-			for h := 0; h <= localHeight; h++ {
+			for h := 0; h <= localHeight-1; h++ {
 				if g.Buff[h][w] < colorID {
 					// for the part of overrapping
 					g.Buff[h][w] = rune(len(g.AllStatus)) + colorID
@@ -141,7 +185,23 @@ func (g *Graph) FillBuff() {
 }
 
 func (g *Graph) FillAxis() error {
-	fill := func(h int) {
+	sep := g.NumSeparate
+	putLabel := func(h, i int) {
+		var nums string
+		if g.IsFixed {
+			nums = fmt.Sprintf("%.2f ", (g.Max.(float64)-g.Min.(float64))/float64(sep)*float64(i))
+		} else {
+			// TODO: dynamically changed
+			//nums = fmt.Sprintf("%.2f ", (g.Max.(float64)-g.Min.(float64))/sep*float64(i))
+		}
+		copy(g.Buff[h][:len(nums)], []rune(nums))
+		if h == int(g.Height-1) {
+			unit := fmt.Sprintf(" %s", g.Unit)
+			//copy(g.Buff[h-1][:len(unit)], []rune(unit))
+			copy(g.Buff[h][int(g.Width)-1-len(unit):g.Width-1], []rune(unit))
+		}
+	}
+	fill := func(h, i int) {
 		for w := 0; w < int(g.Width)-1; w++ {
 			if g.Buff[h][w] == ' ' {
 				g.Buff[h][w] = '─'
@@ -149,41 +209,48 @@ func (g *Graph) FillAxis() error {
 				g.Buff[h][w] += '─'
 			}
 		}
+		putLabel(h, i)
 	}
-	// TODO: put label
 
-	for h := int(g.Height - 1); h > 0; h -= int(g.Height) / 4 {
-		fill(h)
+	i := sep
+	for h := int(g.Height - 1); h > 0; h -= int(g.Height) / sep {
+		fill(h, i)
+		i--
 	}
-	fill(0)
+	fill(0, i)
+
 	return nil
 }
 
-func (g *Graph) ShowLabel(unit string, interval time.Duration) {
+func (g *Graph) ShowLabel(interval time.Duration) {
 	var lineBuffer bytes.Buffer
+	if interval == 0 {
+		interval = g.Interval
+	}
+
 	for i, status := range g.AllStatus {
-		lineBuffer.WriteString(fmt.Sprintf("%s [%v %s/%.2fs]  ",
+		lineBuffer.WriteString(fmt.Sprintf("%s [%.2v %s/%.2fs]  ",
 			g.Targets[i],
 			status.Data.TailData(),
-			unit,
+			g.Unit,
 			float64(interval)/float64(time.Second)))
 	}
 	fmt.Printf("%s\n", lineBuffer.String())
 }
 
-func (g *Graph) Get(hint Hint) {
-	strData, err := hint.read()
+func (g *Graph) Get(hintID int) {
+	strData, err := g.Hints[hintID].read()
 	if err != nil {
 		// error channel?
 		panic(err)
 	}
-	data, err := hint.parse(strData)
+	data, err := g.Hints[hintID].parse(strData)
 	if err != nil {
 		// error channel?
 		panic(err)
 	}
-	data = hint.postProcess(data)
-	hint.getChan() <- data
+	data = g.Hints[hintID].postProcess(data)
+	g.Hints[hintID].getChan() <- data
 }
 
 func (g *Graph) Set(status *Status, Chan chan interface{}, wg *sync.WaitGroup) {
@@ -210,40 +277,41 @@ func (g *Graph) SetForPipe(Chan chan interface{}) {
 	}
 }
 
-func (g *Graph) Run(hints []Hint) {
-	g.runWithInterval(hints)
+func (g *Graph) Run() {
+	g.runWithInterval()
 }
 
-func (g *Graph) runWithInterval(hints []Hint) {
+func (g *Graph) runWithInterval() {
 	wg := &sync.WaitGroup{}
 	count := uint64(0)
-	sleep := hints[0].getInterval()
+	sleep := g.Interval
+	hintNum := len(g.Hints)
 	for {
 		now := time.Now()
-		wg.Add(len(hints))
-		for i, v := range hints {
-			go g.Get(v)
-			go g.Set(g.AllStatus[i], v.getChan(), wg)
+		wg.Add(hintNum)
+		for i, hint := range g.Hints {
+			go g.Get(i)
+			go g.Set(g.AllStatus[i], hint.getChan(), wg)
 		}
 		wg.Wait()
 
 		g.Visualize()
-		g.ShowLabel(hints[0].getUnit(), sleep)
+		g.ShowLabel(0)
 		count++
 		time.Sleep(sleep - time.Now().Sub(now))
 	}
 }
 
-func (g *Graph) RunWithPipe(hint Hint) {
+func (g *Graph) RunWithPipe() {
 	count := uint64(0)
 	before := time.Now()
 	for {
-		go g.Get(hint)
-		g.SetForPipe(hint.getChan())
+		go g.Get(0)
+		g.SetForPipe(g.Hints[0].getChan())
 
 		g.Visualize()
 		after := time.Now()
-		g.ShowLabel(hint.getUnit(), after.Sub(before))
+		g.ShowLabel(after.Sub(before))
 		count++
 		before = after
 	}

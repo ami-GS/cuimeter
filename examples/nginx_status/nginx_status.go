@@ -18,13 +18,13 @@ type NginxStatusHint struct {
 	targetKey    string
 }
 
-func NewNginxStatusHint(targetFile string, targetKey string, dataLocation map[string]int, unit string) *NginxStatusHint {
+func NewNginxStatusHint(targetFile string, targetKey string, dataLocation map[string]int) *NginxStatusHint {
 	keys := make([]string, 0, len(dataLocation))
 	for key := range dataLocation {
 		keys = append(keys, key)
 	}
 	return &NginxStatusHint{
-		BaseHint:     cuimeter.NewBaseHint(unit, 200*time.Millisecond),
+		BaseHint:     cuimeter.NewBaseHint(targetFile + targetKey),
 		dataLocation: dataLocation,
 		prevData:     0,
 		targetFile:   targetFile,
@@ -87,11 +87,10 @@ func ngxstatus() {
 				"Writing":            13,
 				"Waiting":            15,
 			},
-			"req",
 		)
 	}
-	graph := cuimeter.NewGraph(targets)
-	graph.Run(hints)
+	graph := cuimeter.NewGraph(hints, "req", 200*time.Millisecond)
+	graph.Run()
 }
 
 func main() {

@@ -31,10 +31,10 @@ type PCMMemoryHint struct {
 	SystemData System
 }
 
-func NewPCMMemoryHint(unit string) *PCMMemoryHint {
+func NewPCMMemoryHint(target []string) *PCMMemoryHint {
 	return &PCMMemoryHint{
 		// interval is not needed for pipe
-		BaseHint: cuimeter.NewBaseHint(unit, 0),
+		BaseHint: cuimeter.NewBaseHint(target),
 		// dynamically decided
 		SystemData: System{nil, 0, 0, 0},
 	}
@@ -138,9 +138,10 @@ func (s *PCMMemoryHint) parse(dat string) (interface{}, error) {
 }
 
 func memorystatus() {
-	hint := NewPCMMemoryHint("MB")
-	graph := cuimeter.NewGraph([]string{"Socket0_Ch1_Read", "Socket1_Ch1_Read"})
-	graph.RunWithPipe(hint)
+
+	hint := NewPCMMemoryHint([]string{"Socket0_Ch1_Read", "Socket1_Ch1_Read"})
+	graph := cuimeter.NewGraph([]cuimeter.Hint{hint}, "MB", 0)
+	graph.RunWithPipe()
 }
 
 func main() {

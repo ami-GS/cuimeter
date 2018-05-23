@@ -11,11 +11,10 @@ import (
 
 type OneLineHint struct {
 	*cuimeter.BaseHint
-	targetFile string
-	scanner    *bufio.Scanner
+	scanner *bufio.Scanner
 }
 
-func NewOneLineHint(targetFile string, interval time.Duration) *OneLineHint {
+func NewOneLineHint(targetFile string) *OneLineHint {
 	fp, err := os.Open(targetFile)
 	// TODO: need fp.Close(), but when?
 	if err != nil {
@@ -23,9 +22,8 @@ func NewOneLineHint(targetFile string, interval time.Duration) *OneLineHint {
 	}
 	scanner := bufio.NewScanner(fp)
 	return &OneLineHint{
-		BaseHint:   cuimeter.NewBaseHint("num", interval),
-		targetFile: targetFile,
-		scanner:    scanner,
+		BaseHint: cuimeter.NewBaseHint(targetFile),
+		scanner:  scanner,
 	}
 }
 
@@ -50,10 +48,10 @@ func oneline() {
 	targets := cuimeter.Targets
 	hints := make([]cuimeter.Hint, len(targets))
 	for i, _ := range hints {
-		hints[i] = NewOneLineHint(targets[i], 200*time.Millisecond)
+		hints[i] = NewOneLineHint(targets[i])
 	}
-	graph := cuimeter.NewGraph(targets)
-	graph.Run(hints)
+	graph := cuimeter.NewGraph(hints, "num", 200*time.Millisecond)
+	graph.Run()
 }
 
 func main() {
